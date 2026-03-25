@@ -1,0 +1,12 @@
+# Виртуальное окружение (Python)
+.venv/
+venv/
+ENV/
+
+# Настройки PyCharm / IntelliJ IDEA
+.idea/
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*$py.class
