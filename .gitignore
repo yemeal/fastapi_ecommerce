@@ -10,3 +10,6 @@ ENV/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Environment
+.env
