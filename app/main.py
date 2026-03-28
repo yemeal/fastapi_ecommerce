@@ -9,9 +9,11 @@ app = FastAPI(
     version="0.1.0",
 )
 
+
 # Подключаем маршруты категорий и товаров
 app.include_router(categories.router)
 app.include_router(products.router)
+
 
 # Корневой эндпоинт для проверки
 @app.get("/")

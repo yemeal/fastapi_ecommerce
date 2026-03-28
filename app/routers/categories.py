@@ -8,6 +8,7 @@ router = APIRouter(
     tags=["categories"],
 )
 
+
 @router.get("/")
 async def get_all_categories():
     """
@@ -29,10 +30,7 @@ async def create_category():
 
 @router.put("/{category_id}")
 async def update_category(
-        category_id: Annotated[
-            int,
-            Path(...)
-        ]
+    category_id: Annotated[int, Path(...)],
 ):
     """
     Обновляет категорию по её ID.

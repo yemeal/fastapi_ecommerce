@@ -8,6 +8,7 @@ router = APIRouter(
     tags=["products"],
 )
 
+
 @router.get("/")
 async def get_all_products():
     """
@@ -26,10 +27,7 @@ async def create_product():
 
 @router.get("/category/{category_id}")
 async def get_products_by_category(
-        category_id: Annotated[
-            int,
-            Path(...)
-        ]
+    category_id: Annotated[int, Path(...)],
 ):
     """
     Возвращает список товаров в указанной категории по её ID.
@@ -39,10 +37,7 @@ async def get_products_by_category(
 
 @router.get("/{product_id}")
 async def get_product(
-        product_id: Annotated[
-            int,
-            Path(...)
-        ]
+    product_id: Annotated[int, Path(...)],
 ):
     """
     Возвращает детальную информацию о товаре по его ID.
@@ -52,10 +47,7 @@ async def get_product(
 
 @router.put("/{product_id}")
 async def update_product(
-        product_id: Annotated[
-            int,
-            Path(...)
-        ]
+    product_id: Annotated[int, Path(...)],
 ):
     """
     Обновляет товар по его ID.
@@ -65,10 +57,7 @@ async def update_product(
 
 @router.delete("/{product_id}")
 async def delete_product(
-        product_id: Annotated[
-            int,
-            Path(...)
-        ]
+    product_id: Annotated[int, Path(...)],
 ):
     """
     Удаляет товар по его ID.
