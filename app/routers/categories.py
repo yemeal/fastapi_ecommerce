@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Path, Depends, HTTPException, status
 
@@ -15,12 +15,21 @@ router = APIRouter(
 )
 
 
-@router.get("/")
-async def get_all_categories():
+@router.get(
+    "/",
+    response_model=list[CategorySchema],
+    status_code=status.HTTP_200_OK,
+)
+async def get_all_categories(
+    db: Session = Depends(get_db),
+) -> Sequence[CategoryModel]:
     """
     Возвращает список всех категорий товара
     """
-    return {"message": "Список всех категорий (заглушка)"}
+
+    stmt = select(CategoryModel).where(CategoryModel.is_active == True)
+    categories = db.scalars(stmt).all()
+    return categories
 
 
 @router.post(
