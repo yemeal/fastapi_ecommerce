@@ -4,8 +4,10 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .products import Product
+
 
 class Category(Base):
     __tablename__ = "categories"
@@ -21,7 +23,7 @@ class Category(Base):
     )
 
     products: Mapped[list["Product"]] = relationship(
-        back_populates="categories",
+        back_populates="category",
     )
 
     # Параметр remote_side указывает ORM, какая колонка принадлежит удалённой стороне отношения,
