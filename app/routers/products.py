@@ -106,14 +106,26 @@ async def get_products_by_category(
     return products_by_category
 
 
-@router.get("/{product_id}")
+@router.get(
+    "/{product_id}",
+    response_model=ProductSchema,
+)
 async def get_product(
     product_id: Annotated[int, Path(...)],
-):
+    db: Session = Depends(get_db),
+) -> ProductModel:
     """
     Возвращает детальную информацию о товаре по его ID.
     """
-    return {"message": f"Детали товара {product_id} (заглушка)"}
+
+    _product_exists(product_id, db)
+
+    stmt = select(ProductModel).where(
+        ProductModel.id == product_id,
+        ProductModel.is_active == True,
+    )
+    product = db.scalar(stmt)
+    return product
 
 
 @router.put("/{product_id}")
