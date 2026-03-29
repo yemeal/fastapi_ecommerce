@@ -17,6 +17,22 @@ router = APIRouter(
 )
 
 
+# Проверка category_id на активность
+def _category_exists(category_id: int, db: Session) -> bool:
+    if category_id is not None:
+        stmt = select(CategoryModel).where(
+            CategoryModel.id == category_id,
+            CategoryModel.is_active == True,
+        )
+        category = db.scalars(stmt).first()
+        if category is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found or inactive",
+            )
+    return True
+
+
 @router.get(
     "/",
     response_model=list[ProductSchema],
@@ -46,17 +62,7 @@ async def create_product(
     """
 
     # Проверка category_id на активность
-    if product.category_id is not None:
-        stmt = select(CategoryModel).where(
-            CategoryModel.id == product.category_id,
-            CategoryModel.is_active == True,
-        )
-        category = db.scalar(stmt)
-        if category is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Category not found or inactive",
-            )
+    _category_exists(product.category_id, db)
 
     db_product = ProductModel(**product.model_dump())
     db.add(db_product)
