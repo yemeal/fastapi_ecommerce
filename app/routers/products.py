@@ -131,15 +131,32 @@ async def get_product(
     return product
 
 
-@router.put("/{product_id}")
+@router.put(
+    "/{product_id}",
+    response_model=ProductSchema,
+)
 async def update_product(
     product_id: Annotated[int, Path(...)],
-):
+    product: ProductCreate,
+    db: Session = Depends(get_db),
+) -> ProductModel:
     """
     Обновляет товар по его ID.
     """
-    return {"message": f"Товар {product_id} обновлён (заглушка)"}
 
+    _category_exists(product.category_id, db)
+    _product_exists(product_id, db)
+
+    stmt = (
+        update(ProductModel)
+        .where(
+            ProductModel.id == product_id,
+        )
+        .values(**product.model_dump())
+    )
+    db.execute(stmt)
+    db.commit()
+    return db.scalar(select(ProductModel).where(ProductModel.id == product_id))
 
 @router.delete("/{product_id}")
 async def delete_product(
