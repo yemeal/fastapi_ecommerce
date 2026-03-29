@@ -1,7 +1,14 @@
 # products.py
 from typing import Annotated
 
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, Depends, HTTPException
+
+from sqlalchemy.orm import Session
+from sqlalchemy import select, update
+
+from app.db_depends import get_db
+from app.models.products import Product as ProductModel
+from app.schemas import Product as ProductSchema, ProductCreate
 
 router = APIRouter(
     prefix="/products",
@@ -9,12 +16,19 @@ router = APIRouter(
 )
 
 
-@router.get("/")
-async def get_all_products():
+@router.get(
+    "/",
+    response_model=list[ProductSchema],
+)
+async def get_all_products(
+    db: Session = Depends(get_db),
+):
     """
     Возвращает список всех товаров.
     """
-    return {"message": "Список всех товаров (заглушка)"}
+    stmt = select(ProductModel).order_by(ProductModel.is_active == True)
+    products = db.scalars(stmt).all()
+    return products
 
 
 @router.post("/")
