@@ -2,6 +2,7 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Path, Depends, HTTPException, status
+from mako.util import restore__ast
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update
@@ -29,6 +30,21 @@ def _category_exists(category_id: int, db: Session) -> bool:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Category not found or inactive",
+            )
+    return True
+
+
+def _product_exists(product_id: int, db: Session) -> bool:
+    if product_id is not None:
+        stmt = select(ProductModel).where(
+            ProductModel.id == product_id,
+            ProductModel.is_active == True,
+        )
+        product = db.scalars(stmt).first()
+        if product is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found or inactive",
             )
     return True
 
