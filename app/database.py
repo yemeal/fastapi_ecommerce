@@ -39,7 +39,7 @@ async_engine = create_async_engine(
 )
 
 # Настраиваем фабрику сеансов
-async_session = async_sessionmaker(
+async_session_maker = async_sessionmaker(
     bind=async_engine,
     expire_on_commit=False,
     class_=AsyncSession,
