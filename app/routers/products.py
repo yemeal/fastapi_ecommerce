@@ -59,7 +59,7 @@ async def get_all_products(
     """
     Возвращает список всех товаров.
     """
-    stmt = select(ProductModel).order_by(ProductModel.is_active == True)
+    stmt = select(ProductModel).where(ProductModel.is_active == True)
     products = db.scalars(stmt).all()
     return products
 
@@ -101,7 +101,10 @@ async def get_products_by_category(
 
     _category_exists(category_id, db)
 
-    stmt = select(ProductModel).where(ProductModel.category_id == category_id)
+    stmt = select(ProductModel).where(
+        ProductModel.category_id == category_id,
+        ProductModel.is_active == True,
+    )
     products_by_category = db.scalars(stmt).all()
     return products_by_category
 
