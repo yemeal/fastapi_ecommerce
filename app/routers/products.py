@@ -2,7 +2,6 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Path, Depends, HTTPException, status
-from mako.util import restore__ast
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update
@@ -158,11 +157,23 @@ async def update_product(
     db.commit()
     return db.scalar(select(ProductModel).where(ProductModel.id == product_id))
 
-@router.delete("/{product_id}")
+
+@router.delete("/{product_id}", status_code=status.HTTP_200_OK)
 async def delete_product(
     product_id: Annotated[int, Path(...)],
-):
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
     """
     Удаляет товар по его ID.
     """
-    return {"message": f"Товар {product_id} удалён (заглушка)"}
+
+    _product_exists(product_id, db)
+
+    stmt = (
+        update(ProductModel)
+        .where(ProductModel.id == product_id)
+        .values(is_active=False)
+    )
+    db.execute(stmt)
+    db.commit()
+    return {"status": "success", "message": "Product marked as inactive"}
