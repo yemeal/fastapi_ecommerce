@@ -1,12 +1,13 @@
 # products.py
-from typing import Annotated
+from typing import Annotated, Sequence
 
-from fastapi import APIRouter, Path, Depends, HTTPException
+from fastapi import APIRouter, Path, Depends, HTTPException, status
 
 from sqlalchemy.orm import Session
 from sqlalchemy import select, update
 
 from app.db_depends import get_db
+from app.models import Category as CategoryModel
 from app.models.products import Product as ProductModel
 from app.schemas import Product as ProductSchema, ProductCreate
 
@@ -22,7 +23,7 @@ router = APIRouter(
 )
 async def get_all_products(
     db: Session = Depends(get_db),
-):
+) -> Sequence[ProductModel]:
     """
     Возвращает список всех товаров.
     """
@@ -31,12 +32,37 @@ async def get_all_products(
     return products
 
 
-@router.post("/")
-async def create_product():
+@router.post(
+    "/",
+    response_model=ProductSchema,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_product(
+    product: ProductCreate,
+    db: Session = Depends(get_db),
+) -> ProductModel:
     """
     Создаёт новый товар.
     """
-    return {"message": "Товар создан (заглушка)"}
+
+    # Проверка category_id на активность
+    if product.category_id is not None:
+        stmt = select(CategoryModel).where(
+            CategoryModel.id == product.category_id,
+            CategoryModel.is_active == True,
+        )
+        category = db.scalar(stmt)
+        if category is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found or inactive",
+            )
+
+    db_product = ProductModel(**product.model_dump())
+    db.add(db_product)
+    db.commit()
+    db.refresh(db_product)
+    return db_product
 
 
 @router.get("/category/{category_id}")
