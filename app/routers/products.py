@@ -71,14 +71,23 @@ async def create_product(
     return db_product
 
 
-@router.get("/category/{category_id}")
+@router.get(
+    "/category/{category_id}",
+    response_model=list[ProductSchema],
+)
 async def get_products_by_category(
     category_id: Annotated[int, Path(...)],
-):
+    db: Session = Depends(get_db),
+) -> Sequence[ProductModel]:
     """
     Возвращает список товаров в указанной категории по её ID.
     """
-    return {"message": f"Товары в категории {category_id} (заглушка)"}
+
+    _category_exists(category_id, db)
+
+    stmt = select(ProductModel).where(ProductModel.category_id == category_id)
+    products_by_category = db.scalars(stmt).all()
+    return products_by_category
 
 
 @router.get("/{product_id}")
