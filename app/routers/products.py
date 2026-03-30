@@ -2,9 +2,7 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Path, Depends, HTTPException, status
-from sqlalchemy.exc import NoResultFound
 
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
@@ -21,8 +19,8 @@ router = APIRouter(
 
 # Проверка category_id на активность
 async def _category_exists(
-        category_id: int,
-        db: AsyncSession,
+    category_id: int,
+    db: AsyncSession,
 ) -> CategoryModel:
     res = await db.scalars(
         select(CategoryModel).where(
@@ -40,22 +38,22 @@ async def _category_exists(
 
 
 async def _product_exists(
-        product_id: int,
-        db: AsyncSession,
+    product_id: int,
+    db: AsyncSession,
 ) -> ProductModel:
-        res = await db.scalars(
-            select(ProductModel).where(
-                ProductModel.id == product_id,
-                ProductModel.is_active == True,
-            )
+    res = await db.scalars(
+        select(ProductModel).where(
+            ProductModel.id == product_id,
+            ProductModel.is_active == True,
         )
-        product = res.first()
-        if not product:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Product not found or inactive",
-            )
-        return product
+    )
+    product = res.first()
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found or inactive",
+        )
+    return product
 
 
 @router.get(
@@ -130,13 +128,8 @@ async def get_product(
     Возвращает детальную информацию о товаре по его ID.
     """
 
-    await _product_exists(product_id, db)
+    product = await _product_exists(product_id, db)
 
-    stmt = select(ProductModel).where(
-        ProductModel.id == product_id,
-        ProductModel.is_active == True,
-    )
-    product = await db.scalar(stmt)
     return product
 
 
