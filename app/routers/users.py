@@ -38,7 +38,7 @@ async def create_user(
 
     db_user = UserModel(
         email=user.email,
-        hashed_password=user.password,
+        hashed_password=hash_password(user.password),
         role=user.role,
     )
 
