@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from .categories import Category
 
@@ -28,6 +29,9 @@ class Product(Base):
     )
     is_active: Mapped[bool] = mapped_column(
         default=True,
+    )
+    seller_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
     )
     stock: Mapped[int]
 

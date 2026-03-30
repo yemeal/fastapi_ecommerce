@@ -1,7 +1,7 @@
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import String
 
-from app.models import Base
+from app.models.base import Base
 
 from typing import TYPE_CHECKING
 
