@@ -2,11 +2,13 @@
 from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Path, Depends, HTTPException, status
+from sqlalchemy.exc import NoResultFound
 
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
-from app.db_depends import get_db
+from app.db_depends import get_db, get_async_db
 from app.models import Category as CategoryModel
 from app.models.products import Product as ProductModel
 from app.schemas import Product as ProductSchema, ProductCreate
@@ -18,34 +20,42 @@ router = APIRouter(
 
 
 # Проверка category_id на активность
-def _category_exists(category_id: int, db: Session) -> bool:
-    if category_id is not None:
-        stmt = select(CategoryModel).where(
+async def _category_exists(
+        category_id: int,
+        db: AsyncSession,
+) -> CategoryModel:
+    res = await db.scalars(
+        select(CategoryModel).where(
             CategoryModel.id == category_id,
             CategoryModel.is_active == True,
         )
-        category = db.scalars(stmt).first()
-        if category is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Category not found or inactive",
-            )
-    return True
-
-
-def _product_exists(product_id: int, db: Session) -> bool:
-    if product_id is not None:
-        stmt = select(ProductModel).where(
-            ProductModel.id == product_id,
-            ProductModel.is_active == True,
+    )
+    category = res.first()
+    if not category:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found or inactive",
         )
-        product = db.scalars(stmt).first()
-        if product is None:
+    return category
+
+
+async def _product_exists(
+        product_id: int,
+        db: AsyncSession,
+) -> ProductModel:
+        res = await db.scalars(
+            select(ProductModel).where(
+                ProductModel.id == product_id,
+                ProductModel.is_active == True,
+            )
+        )
+        product = res.first()
+        if not product:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Product not found or inactive",
             )
-    return True
+        return product
 
 
 @router.get(
@@ -53,13 +63,13 @@ def _product_exists(product_id: int, db: Session) -> bool:
     response_model=list[ProductSchema],
 )
 async def get_all_products(
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ) -> Sequence[ProductModel]:
     """
     Возвращает список всех товаров.
     """
     stmt = select(ProductModel).where(ProductModel.is_active == True)
-    products = db.scalars(stmt).all()
+    products = (await db.scalars(stmt)).all()
     return products
 
 
@@ -70,19 +80,19 @@ async def get_all_products(
 )
 async def create_product(
     product: ProductCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ) -> ProductModel:
     """
     Создаёт новый товар.
     """
 
     # Проверка category_id на активность
-    _category_exists(product.category_id, db)
+    await _category_exists(product.category_id, db)
 
     db_product = ProductModel(**product.model_dump())
     db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
+    await db.refresh(db_product)
     return db_product
 
 
@@ -92,19 +102,19 @@ async def create_product(
 )
 async def get_products_by_category(
     category_id: Annotated[int, Path(...)],
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ) -> Sequence[ProductModel]:
     """
     Возвращает список товаров в указанной категории по её ID.
     """
 
-    _category_exists(category_id, db)
+    await _category_exists(category_id, db)
 
     stmt = select(ProductModel).where(
         ProductModel.category_id == category_id,
         ProductModel.is_active == True,
     )
-    products_by_category = db.scalars(stmt).all()
+    products_by_category = (await db.scalars(stmt)).all()
     return products_by_category
 
 
@@ -114,19 +124,19 @@ async def get_products_by_category(
 )
 async def get_product(
     product_id: Annotated[int, Path(...)],
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ) -> ProductModel:
     """
     Возвращает детальную информацию о товаре по его ID.
     """
 
-    _product_exists(product_id, db)
+    await _product_exists(product_id, db)
 
     stmt = select(ProductModel).where(
         ProductModel.id == product_id,
         ProductModel.is_active == True,
     )
-    product = db.scalar(stmt)
+    product = await db.scalar(stmt)
     return product
 
 
@@ -137,14 +147,14 @@ async def get_product(
 async def update_product(
     product_id: Annotated[int, Path(...)],
     product: ProductCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ) -> ProductModel:
     """
     Обновляет товар по его ID.
     """
 
-    _category_exists(product.category_id, db)
-    _product_exists(product_id, db)
+    await _category_exists(product.category_id, db)
+    await _product_exists(product_id, db)
 
     stmt = (
         update(ProductModel)
@@ -153,27 +163,29 @@ async def update_product(
         )
         .values(**product.model_dump())
     )
-    db.execute(stmt)
-    db.commit()
-    return db.scalar(select(ProductModel).where(ProductModel.id == product_id))
+    await db.execute(stmt)
+    await db.commit()
+    return await db.scalar(
+        select(ProductModel).where(ProductModel.id == product_id)
+    )
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_200_OK)
 async def delete_product(
     product_id: Annotated[int, Path(...)],
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ) -> dict[str, str]:
     """
     Удаляет товар по его ID.
     """
 
-    _product_exists(product_id, db)
+    await _product_exists(product_id, db)
 
     stmt = (
         update(ProductModel)
         .where(ProductModel.id == product_id)
         .values(is_active=False)
     )
-    db.execute(stmt)
-    db.commit()
+    await db.execute(stmt)
+    await db.commit()
     return {"status": "success", "message": "Product marked as inactive"}
