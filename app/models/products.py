@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .categories import Category
+    from .users import User
 
 
 class Product(Base):
@@ -36,5 +37,8 @@ class Product(Base):
     stock: Mapped[int]
 
     category: Mapped["Category"] = relationship(
+        back_populates="products",
+    )
+    seller: Mapped["User"] = relationship(
         back_populates="products",
     )
