@@ -228,6 +228,13 @@ class User(BaseModel):
     Используется в GET-запросах.
     """
 
+    id: Annotated[
+        int,
+        Field(
+            ...,
+            description="ID пользователя",
+        ),
+    ]
     email: Annotated[
         EmailStr,
         Field(
