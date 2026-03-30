@@ -216,7 +216,7 @@ class UserCreate(BaseModel):
         str,
         Field(
             default="buyer",
-            pattern="^(buyer|seller)$)",
+            pattern="^(buyer|seller)$",
             description="Роль: 'buyer' или 'seller'",
         ),
     ]
