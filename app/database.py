@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from config import IS_DEBUG, DATABASE_URL_POSTGRE, DATABASE_URL_SQLITE
+from app.config import IS_DEBUG, DATABASE_URL_POSTGRE, DATABASE_URL_SQLITE
 
 # --------------- Cинхронное подключение к SQLite -------------------------
 
