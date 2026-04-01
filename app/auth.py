@@ -82,23 +82,16 @@ async def get_current_user(
     return user
 
 
-async def get_current_seller(
-        curr_user: UserModel = Depends(get_current_user)
-):
-    if curr_user.role != "seller":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only sellers can perform this action"
-        )
-    return curr_user
+def RoleChecker(roles: set[str]):
+
+    async def inner_dependency(curr_user: UserModel = Depends(get_current_user)):
+        if curr_user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Only {" ".join(roles)} can perform this action"
+            )
+        return curr_user
+
+    return inner_dependency
 
 
-async def get_current_admin(
-    curr_user: UserModel = Depends(get_current_user)
-):
-    if curr_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can perform this action"
-        )
-    return curr_user

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Path, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
-from app.auth import get_current_seller
+from app.auth import RoleChecker
 from app.db_depends import get_async_db
 from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel
 from app.schemas import Product as ProductSchema, ProductCreate
@@ -79,7 +79,7 @@ async def get_all_products(
 async def create_product(
     product: ProductCreate,
     db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller)
+    current_user: UserModel = Depends(RoleChecker(roles={"seller"})),
 ) -> ProductModel:
     """
     Создаёт новый товар.
@@ -142,7 +142,7 @@ async def update_product(
     product_id: Annotated[int, Path(...)],
     product: ProductCreate,
     db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller),
+    current_user: UserModel = Depends(RoleChecker(roles={"seller"})),
 ) -> ProductModel:
     """
     Обновляет товар по его ID.
@@ -174,7 +174,7 @@ async def update_product(
 async def delete_product(
     product_id: Annotated[int, Path(...)],
     db: AsyncSession = Depends(get_async_db),
-    current_user: UserModel = Depends(get_current_seller)
+    current_user: UserModel = Depends(RoleChecker(roles={"seller"})),
 ) -> dict[str, str]:
     """
     Удаляет товар по его ID.
