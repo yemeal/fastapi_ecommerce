@@ -1,17 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-IS_DEBUG: bool = os.getenv("DB_ECHO", "False").lower() == "true"
-
+from config import IS_DEBUG, DATABASE_URL_POSTGRE, DATABASE_URL_SQLITE
 
 # --------------- Cинхронное подключение к SQLite -------------------------
-
-# Строка подключения для SQLite
-DATABASE_URL_SQLITE: str = os.getenv("DATABASE_URL_SQLITE")
 
 # Создаём Engine
 engine = create_engine(
@@ -22,15 +13,12 @@ engine = create_engine(
 # Настраиваем фабрику сеансов
 SessionLocal: sessionmaker[Session] = sessionmaker(bind=engine)
 
-
 # --------------- Асинхронное подключение к PostgreSQL -------------------------
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
     AsyncSession,
 )
-
-DATABASE_URL_POSTGRE: str = os.getenv("DATABASE_URL_POSTGRE")
 
 # Создаём Engine
 async_engine = create_async_engine(
