@@ -6,9 +6,9 @@ from fastapi import APIRouter, Path, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
-from app.db_depends import get_db, get_async_db
-from app.models import Category as CategoryModel
-from app.models.products import Product as ProductModel
+from app.auth import get_current_seller
+from app.db_depends import get_async_db
+from app.models import Category as CategoryModel, Product as ProductModel, User as UserModel
 from app.schemas import Product as ProductSchema, ProductCreate
 
 router = APIRouter(
@@ -79,6 +79,7 @@ async def get_all_products(
 async def create_product(
     product: ProductCreate,
     db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_seller)
 ) -> ProductModel:
     """
     Создаёт новый товар.
@@ -87,7 +88,7 @@ async def create_product(
     # Проверка category_id на активность
     await _category_exists(product.category_id, db)
 
-    db_product = ProductModel(**product.model_dump())
+    db_product = ProductModel(**product.model_dump(), seller_id=current_user.id)
     db.add(db_product)
     await db.commit()
     await db.refresh(db_product)
@@ -141,13 +142,19 @@ async def update_product(
     product_id: Annotated[int, Path(...)],
     product: ProductCreate,
     db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_seller),
 ) -> ProductModel:
     """
     Обновляет товар по его ID.
     """
 
+    db_product = await _product_exists(product_id, db)
+    if db_product.seller_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own products",
+        )
     await _category_exists(product.category_id, db)
-    await _product_exists(product_id, db)
 
     stmt = (
         update(ProductModel)
@@ -167,12 +174,18 @@ async def update_product(
 async def delete_product(
     product_id: Annotated[int, Path(...)],
     db: AsyncSession = Depends(get_async_db),
+    current_user: UserModel = Depends(get_current_seller)
 ) -> dict[str, str]:
     """
     Удаляет товар по его ID.
     """
 
-    await _product_exists(product_id, db)
+    db_product = await _product_exists(product_id, db)
+    if db_product.seller_id != current_user.id:
+        HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own products",
+        )
 
     stmt = (
         update(ProductModel)

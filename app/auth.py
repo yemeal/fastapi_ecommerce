@@ -82,7 +82,23 @@ async def get_current_user(
     return user
 
 
-if __name__ == "__main__":
-    data = {"sub": "user@example.com", "role": "seller", "id": 1}
-    token = create_access_token(data)
-    print(token)
+async def get_current_seller(
+        curr_user: UserModel = Depends(get_current_user)
+):
+    if curr_user.role != "seller":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only sellers can perform this action"
+        )
+    return curr_user
+
+
+async def get_current_admin(
+    curr_user: UserModel = Depends(get_current_user)
+):
+    if curr_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can perform this action"
+        )
+    return curr_user

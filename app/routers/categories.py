@@ -5,6 +5,7 @@ from fastapi import APIRouter, Path, Depends, HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.auth import get_current_admin
 from app.models.categories import Category as CategoryModel
 from app.schemas import Category as CategorySchema, CategoryCreate
 from app.db_depends import get_async_db
@@ -36,6 +37,7 @@ async def get_all_categories(
     "/",
     status_code=status.HTTP_201_CREATED,
     response_model=CategorySchema,
+    dependencies=[Depends(get_current_admin)],
 )
 async def create_category(
     category: CategoryCreate,
@@ -69,6 +71,7 @@ async def create_category(
 @router.put(
     "/{category_id}",
     response_model=CategorySchema,
+    dependencies=[Depends(get_current_admin)],
 )
 async def update_category(
     category_id: Annotated[
@@ -127,6 +130,7 @@ async def update_category(
     "/{category_id}",
     status_code=status.HTTP_200_OK,
     response_model=CategorySchema,
+    dependencies=[Depends(get_current_admin)],
 )
 async def delete_category(
     category_id: Annotated[
